@@ -1,6 +1,8 @@
 import streamlit as st
 from openai import OpenAI
 
+MAX_QUERIES=2
+
 def main():
     st.set_page_config(
         page_title="Chatbot",
@@ -29,13 +31,17 @@ def main():
             'Select a model',
             model_configs.keys(),
             )
-    
+        st.sidebar.markdown(f"**Queries used:** {st.session_state.query_count} / {MAX_QUERIES}")
+
     config = model_configs[selected_model]
     client = OpenAI(
 
             api_key=config['api_key'],
             base_url=config['base_url'])
 
+    if 'query_count' not in st.session_state:
+        st.session_state.query_count = 0
+    
     if 'messages' not in st.session_state:
         st.session_state.messages = []
 
@@ -48,6 +54,10 @@ def main():
     if st.session_state.active_model != selected_model:
         st.session_state.active_model = selected_model
     
+    if st.session_state.query_count >= MAX_QUERIES:
+        st.warning("You’ve reached the maximum number of queries for this session.")
+        st.stop()
+
     for message in st.session_state.messages:
         with st.chat_message(message['role']):
             st.markdown(message['content'])

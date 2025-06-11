@@ -1,14 +1,45 @@
 import streamlit as st
+from openai import OpenAI
 
 def main():
-    st.title("Welcome to My Streamlit App")
-    st.write("This is a simple Streamlit application.")
+    st.set_page_config(
+        page_title="Chat Bot",
+        page_icon=":smiley:",
+        layout="centered",
+        initial_sidebar_state="expanded"
+    )
+
+    st.title("Echo Bot")
+
+    client = OpenAI(api_key=st.secrets['OPENAI_API_KEY'])
+
+    if 'openai_model' not in st.session_state:
+        st.session_state.openai_model = 'gpt-4.1-nano'
+
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
     
-    button = st.button("Click Me")
+    for message in st.session_state.messages:
+        with st.chat_message(message['role']):
+            st.markdown(message['content'])
+    
+    if prompt := st.chat_input("What's up?"):
+        st.session_state.messages.append({'role': 'user', 'content': prompt})
+        with st.chat_message('user'):
+            st.markdown(prompt)
 
-    if button:
-        st.write("Button clicked!")
+    with st.chat_message('assistant'):
+        stream = client.chat.completions.create(
+            model=st.session_state['openai_model'],
+            messages=[
+                {'role': m['role'], 'content': m['content']}
+                for m in st.session_state.messages
+            ],
+            stream=True
+        )
+        response = st.write_stream(stream)
 
+    st.session_state.messages.append({'role': 'assistant', 'content': response})
 
 if __name__ == "__main__":
     main()

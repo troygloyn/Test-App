@@ -3,21 +3,50 @@ from openai import OpenAI
 
 def main():
     st.set_page_config(
-        page_title="Chat Bot",
+        page_title="Chatbot",
         page_icon=":smiley:",
         layout="centered",
         initial_sidebar_state="expanded"
     )
 
-    st.title("Echo Bot")
+    st.title("Chatbot")
 
-    client = OpenAI(api_key=st.secrets['OPENAI_API_KEY'])
+    model_configs = {
+        "OpenAI GPT-4.1 Nano": {
+            "api_key": st.secrets['OPENAI_API_KEY'],
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4.1-nano"
+        },
+        "Grok-3 Mini": {
+            "api_key": st.secrets['GROK_API_KEY'],
+            "base_url": "https://api.x.ai/v1",
+            "model": "grok-3-mini"  # Adjust to actual model name if different
+        }
+    }
 
-    if 'openai_model' not in st.session_state:
-        st.session_state.openai_model = 'gpt-4.1-nano'
+    with st.sidebar:
+        selected_model = st.selectbox(
+            'Select a model',
+            model_configs.keys(),
+            )
+    
+    config = model_configs[selected_model]
+    client = OpenAI(
+
+            api_key=config['api_key'],
+            base_url=config['base_url'])
 
     if 'messages' not in st.session_state:
         st.session_state.messages = []
+
+    if 'model' not in st.session_state:
+        st.session_state.model = selected_model
+
+    if 'active_model' not in st.session_state:
+        st.session_state.active_model = selected_model
+    
+    if st.session_state.active_model != selected_model:
+        st.session_state.active_model = selected_model
     
     for message in st.session_state.messages:
         with st.chat_message(message['role']):
@@ -30,7 +59,7 @@ def main():
 
         with st.chat_message('assistant'):
             stream = client.chat.completions.create(
-                model=st.session_state['openai_model'],
+                model=config['model'],
                 messages=[
                     {'role': m['role'], 'content': m['content']}
                     for m in st.session_state.messages

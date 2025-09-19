@@ -31,7 +31,6 @@ def main():
             'Select a model',
             model_configs.keys(),
             )
-        st.sidebar.markdown(f"**Queries used:** {st.session_state.query_count} / {MAX_QUERIES}")
 
     config = model_configs[selected_model]
     client = OpenAI(
@@ -63,6 +62,7 @@ def main():
             st.markdown(message['content'])
     
     if prompt := st.chat_input("What's up?"):
+        st.session_state.query_count += 1
         st.session_state.messages.append({'role': 'user', 'content': prompt})
         with st.chat_message('user'):
             st.markdown(prompt)
@@ -79,6 +79,11 @@ def main():
             response = st.write_stream(stream)
 
         st.session_state.messages.append({'role': 'assistant', 'content': response})
+
+    with st.sidebar:
+        used = st.session_state.get("query_count", 0)
+        st.progress(used)
+        st.caption(f'Used {used} of {MAX_QUERIES} queries')
 
 if __name__ == "__main__":
     main()
